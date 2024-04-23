@@ -6,6 +6,10 @@ option java_package = "com.google.protobuf_test_messages.edition2023";
 option java_multiple_files = true;
 option objc_class_prefix = "Editions";
 
+message ComplexMessage {
+  int32 d = 1;
+}
+
 message TestAllTypesEdition2023 {
   message NestedMessage {
     int32 a = 1;
@@ -164,6 +168,16 @@ message TestAllTypesEdition2023 {
 
   // extensions
   extensions 120 to 200;
+
+  extensions 1000 [metadata = {
+    type: "protobuf_test_messages.editions.ComplexMessage",
+    name: "extension_with_metadata",
+  }];
+
+  extend TestAllTypesEdition2023 {
+    protobuf_test_messages.editions.ComplexMessage extension_with_metadata =
+        1000;
+  }
 
   // groups
   message GroupLikeType {
