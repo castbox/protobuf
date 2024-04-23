@@ -814,8 +814,21 @@ const char* WireFormat::_InternalParseAndMergeField(
     return internal::UnknownFieldParse(
         tag, reflection->MutableUnknownFields(msg), ptr, ctx);
   }
-  if (WireFormatLite::GetTagWireType(tag) !=
-      WireTypeForFieldType(field->type())) {
+  auto zget_tag_wire_type = WireFormatLite::GetTagWireType(tag);
+  auto zwire_type_for_field_type = WireTypeForFieldType(field->type());
+  auto zfield_type = field->type();
+  (void)zget_tag_wire_type;
+  (void)zwire_type_for_field_type;
+  (void)zfield_type;
+  if ((WireFormatLite::GetTagWireType(tag) !=
+       WireTypeForFieldType(field->type())) &&
+      ((WireFormatLite::GetTagWireType(tag) !=
+            WireFormatLite::WIRETYPE_LENGTH_DELIMITED &&
+        WireFormatLite::GetTagWireType(tag) !=
+            WireFormatLite::WIRETYPE_START_GROUP) ||
+       WireFormatLite::GetTagWireType(tag) == WireFormatLite::WIRETYPE_VARINT ||
+       WireTypeForFieldType(field->type()) == WireFormatLite::WIRETYPE_VARINT ||
+       field->type() == FieldDescriptor::TYPE_STRING || field->is_packable())) {
     if (field->is_packable() && WireFormatLite::GetTagWireType(tag) ==
                                     WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
       switch (field->type()) {
@@ -995,18 +1008,7 @@ const char* WireFormat::_InternalParseAndMergeField(
       return ptr;
     }
 
-    case FieldDescriptor::TYPE_GROUP: {
-      Message* sub_message;
-      if (field->is_repeated()) {
-        sub_message = reflection->AddMessage(msg, field, ctx->data().factory);
-      } else {
-        sub_message =
-            reflection->MutableMessage(msg, field, ctx->data().factory);
-      }
-
-      return ctx->ParseGroup(sub_message, ptr, tag);
-    }
-
+    case FieldDescriptor::TYPE_GROUP:
     case FieldDescriptor::TYPE_MESSAGE: {
       Message* sub_message;
       if (field->is_repeated()) {
@@ -1015,6 +1017,12 @@ const char* WireFormat::_InternalParseAndMergeField(
         sub_message =
             reflection->MutableMessage(msg, field, ctx->data().factory);
       }
+
+      if (WireFormatLite::GetTagWireType(tag) ==
+          WireFormatLite::WIRETYPE_START_GROUP) {
+        return ctx->ParseGroup(sub_message, ptr, tag);
+      }
+
       ptr = ctx->ParseMessage(sub_message, ptr);
 
       // For map entries, if the value is an unknown enum we have to push it
@@ -1032,11 +1040,9 @@ const char* WireFormat::_InternalParseAndMergeField(
           reflection->RemoveLast(msg, field);
         }
       }
-
       return ptr;
     }
   }
-
   // GCC 8 complains about control reaching end of non-void function here.
   // Let's keep it happy by returning a nullptr.
   return nullptr;
