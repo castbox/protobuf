@@ -60,12 +60,23 @@ genrule(
     visibility = ["//ruby:__subpackages__"],
 )
 
+# Update to the latest version of rubygems
+genrule(
+    name = "update_ruby_gems",
+    outs = ["ruby_gems_version.txt"],
+    cmd = "gem update --system --no-document && gem -v > $@",
+    tags = ["manual"],
+    visibility = ["//ruby:__subpackages__"],
+)
+
 ruby_library(
     name = "protobuf_lib",
     srcs = glob([
         "**/*.rb",
     ]),
-    data = select({
+    data = [
+        "ruby_gems_version.txt",
+    ] + select({
         # Platform native implementations
         "@rules_ruby//ruby/runtime:config_jruby": ["protobuf_java.jar"],
         "@platforms//os:osx": ["protobuf_c.bundle"],
@@ -83,7 +94,7 @@ ruby_library(
     visibility = ["//ruby:__pkg__"],
     deps = [
         "//ruby:well_known_ruby_protos",
-        "@protobuf_bundle//:bigdecimal",
+        #        "@protobuf_bundle//:bigdecimal",
     ] + select({
         "//ruby:ffi_enabled": [
             "@protobuf_bundle//:ffi",
