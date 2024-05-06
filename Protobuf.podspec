@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.authors  = { 'The Protocol Buffers contributors' => 'protobuf@googlegroups.com' }
   s.cocoapods_version = '>= 1.12.0'
 
-  s.source = { :git => 'https://github.com/protocolbuffers/protobuf.git',
+  s.source = { :git => 'https://github.com/castbox/protobuf.git',
                :tag => "v#{s.version}" }
 
   s.source_files = 'objectivec/*.{h,m}',
